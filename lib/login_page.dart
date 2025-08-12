@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'home_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'escolha_perfil_page.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,15 +16,25 @@ class _LoginPageState extends State<LoginPage> {
   final _passController = TextEditingController();
   String? _erroMensagem;
 
-  void _login() {
+  bool _senhaVisivel = false;
+
+  void _login() async {
     if (_formKey.currentState!.validate()) {
       final user = _userController.text;
       final pass = _passController.text;
 
       if (user == 'admin' && pass == '1234') {
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('logado', true);
+        await prefs.setString('usuario', user); // salva o nome do usuario
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Login realizado com sucesso')),
+        );
+
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const HomePage()),
+          MaterialPageRoute(builder: (context) => const EscolhaPerfilPage()),
         );
       } else {
         setState(() {
@@ -44,16 +56,34 @@ class _LoginPageState extends State<LoginPage> {
             children: [
               TextFormField(
                 controller: _userController,
-                decoration: const InputDecoration(labelText: 'Usuário'),
+                decoration: const InputDecoration(
+                  labelText: 'Usuário',
+                  prefixIcon: Icon(Icons.person),
+                ),
                 validator: (value) =>
                     value!.isEmpty ? 'Digite seu usuário' : null,
               ),
 
               const SizedBox(height: 16),
+
+              //Campo de senha demonstra o ícone e botão parta mostra/ocultar
               TextFormField(
                 controller: _passController,
-                decoration: const InputDecoration(labelText: 'Senha'),
-                obscureText: true,
+                obscureText: !_senhaVisivel, // ocultar/mostra a senha
+                decoration: InputDecoration(
+                  labelText: 'Senha',
+                  prefixIcon: const Icon(Icons.lock),
+                  suffixIcon: IconButton(
+                    icon: Icon(
+                      _senhaVisivel ? Icons.visibility : Icons.visibility_off,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _senhaVisivel = !_senhaVisivel;
+                      });
+                    },
+                  ),
+                ),
                 validator: (value) =>
                     value!.isEmpty ? 'Digite sua senha' : null,
               ),
